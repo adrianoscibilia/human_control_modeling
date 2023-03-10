@@ -87,22 +87,42 @@ def bag_read(file_path):
 
     # CONVERT TO NP ARRAYS
     error_adj_array = np.array(error_adj)
+    force_array = np.array(force_adj)
     # ref_pos_adj_array = np.array(ref_pos_adj)
     # act_pos_adj_array = np.array(act_pos_adj)
-    return error_adj_array
+    return error_adj_array, force_array
 
 
-subjects = ['/Alessandro_Scano', '/Claudia_Pagano', '/Francesco_Airoldi', '/Matteo_Malosio', '/Michele', '/Giorgio_Nicola', '/Paolo_Franceschi', '/Marco_Faroni', '/Stefano_Mutti', '/Trunal']
+subjects_complete = ['/Alessandro_Scano', '/Claudia_Pagano', '/Francesco_Airoldi', '/Matteo_Malosio', '/Michele', '/Giorgio_Nicola', '/Paolo_Franceschi', '/Marco_Faroni', '/Stefano_Mutti', '/Trunal']
+subjects = ['/Claudia_Pagano', '/Marco_Faroni']
 bag_folder_base = '/home/adriano/projects/ros_ws/src/controller_adriano/bag'
-
+file_extension = '.bag'
+experiment_type = 'step'
+underscore = '_'
+bag_folder = bag_folder_base + subjects[0] + '/step/'
+experiment_number = str(1)
+file_name = experiment_type + underscore + experiment_number
+bag_input = bag_folder + file_name + file_extension
+x_n_i, y_n_i = bag_read(bag_input)
+x_n = np.empty(len(x_n_i))
+y_n = np.empty(len(y_n_i))
+x = []
+y = []
 #Iterative call of files from folder
 for n in range(0, len(subjects)):
    bag_folder = bag_folder_base + subjects[n] + '/step/'
-   file_extension = '.bag'
-   experiment_type = 'step'
-   underscore = '_'
-   for i in range(1, 11):
+   for i in range(1, 3):
        experiment_number = str(i)
        file_name = experiment_type + underscore + experiment_number
        bag_input = bag_folder + file_name + file_extension
-       experiment_err = bag_read(bag_input)
+       x_n_i, y_n_i = bag_read(bag_input)
+       x_n = np.append(x_n, x_n_i, axis=0)
+       y_n = np.append(y_n, y_n_i, axis=0)
+   x.append(x_n)
+   y.append(y_n)
+
+dataset = np.hstack((np.array(x), np.array(y)))
+dataframe = pd.DataFrame(dataset)
+dataframe.head()
+dataframe.to_pickle('dataframe.pkl')
+dataframe.to_csv('dataframe.csv')
