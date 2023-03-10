@@ -131,6 +131,7 @@ print("number of virtual ref: ", delay_lenght)
 # PLOTS
 ref_pos_plt = ref_pos_adj - ref_pos_adj[0]
 act_pos_plt = act_pos_adj - act_pos_adj[0]
+error_prova_plt = ref_pos_plt - act_pos_plt
 
 plt.figure(1)
 plt.plot(time_adj, ref_pos_plt)
@@ -149,6 +150,7 @@ plt.grid()
 
 plt.figure(3)
 plt.plot(time_adj, h_err_adj)
+plt.plot(time_adj, error_prova_plt)
 plt.xlabel("time")
 plt.ylabel("error")
 plt.grid()
