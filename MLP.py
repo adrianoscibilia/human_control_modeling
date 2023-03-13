@@ -8,10 +8,9 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from IPython.display import clear_output
-from ast import literal_eval
+
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-N_CLASSES = 4  # set equal to output
 
 
 class MLP(torch.nn.Module):
@@ -20,9 +19,8 @@ class MLP(torch.nn.Module):
         self.linear1 = torch.nn.Linear(D_in, H)
         self.linear2 = torch.nn.Linear(H, H)
         self.linear3 = torch.nn.Linear(H, H)
-        self.linear4 = torch.nn.Linear(H, int(H/2))
-        self.linear5 = torch.nn.Linear(int(H/2), int(H/2))
-        self.linear6 = torch.nn.Linear(int(H/2), D_out)
+        self.linear4 = torch.nn.Linear(H, H)
+        self.linear5 = torch.nn.Linear(H, D_out)
 
     def forward(self, x):
         x = self.linear1(x)
@@ -31,28 +29,6 @@ class MLP(torch.nn.Module):
         x = self.linear4(F.relu(x))
         y_pred = self.linear5(x)
         return y_pred
-
-
-class CustomDataset(torch.utils.data.Dataset):
-    def __init__(self, dataframe):
-        self.dataframe = dataframe
-
-    def __len__(self):
-        return len(self.dataframe)
-
-    def __getitem__(self, idx):
-        # Get the label for the current sample
-        label = torch.Tensor(self.dataframe['y'].iloc[idx]).to(DEVICE)
-
-        # Get the input for the current sample
-        input = torch.Tensor(self.dataframe['x'].iloc[idx]).to(DEVICE)
-
-        return input, label
-
-    def train_test_split(self, train_size=0.8):
-        train_size = int(train_size * len(self))
-        test_size = len(self) - train_size
-        return torch.utils.data.random_split(self, [train_size, test_size])
 
 
 def train(model, epochs, train_loader, val_loader, log_interval, l_rate):
@@ -113,14 +89,6 @@ def train(model, epochs, train_loader, val_loader, log_interval, l_rate):
                 ax.set_ylabel('Score')
                 ax.legend()
 
-                # plot f1 score for each class
-                fig, ax = plt.subplots()
-                for i in range(N_CLASSES):
-                    ax.plot([score[str(i)]['f1-score'] for score in test_scores], label=f'Class {i}')
-                ax.set_xlabel('Epoch')
-                ax.set_ylabel('F1 Score')
-                ax.legend()
-
                 plt.show()
 
                 print(
@@ -153,29 +121,20 @@ def train(model, epochs, train_loader, val_loader, log_interval, l_rate):
             ax.set_ylabel('Score')
             ax.legend()
 
-            # plot f1 score for each class
-            fig, ax = plt.subplots()
-            for i in range(N_CLASSES):
-                ax.plot([score[str(i)]['f1-score'] for score in test_scores], label=f'Class {i}')
-            ax.set_xlabel('Epoch')
-            ax.set_ylabel('F1 Score')
-            ax.legend()
-
             plt.show()
 
             print(
                 f"Epoch {epoch + 1}/{epochs}: Training Loss: {epoch_train_loss:.4f} Test Loss: {epoch_val_loss:.4f} \nTest Score:\n {test_score} ")
 
 
-# dataframe = pd.read_pickle('./signature_condensed_dataframe.pkl')
-dataframe = pd.read_pickle('./signature_condensed_dataframe.pkl')
-dataframe.head()
+dataframe = pd.read_pickle('./dataframe.pkl')
 
-# dataset = CustomDataset(dataframe)
 X = dataframe["x"]
 Y = dataframe["y"]
-data_x = np.array([np.array(x_) for x_ in X])
-data_y = np.array([np.array(y_) for y_ in Y])
+data_x = X[0]
+data_y = Y[0]
+data_x = np.transpose(data_x)
+data_y = np.transpose(data_y)
 
 X_train, X_tmp, y_train, y_tmp = train_test_split(data_x, data_y, test_size=0.2, random_state=113)
 X_val, X_test, y_val, y_test = train_test_split(X_tmp, y_tmp, test_size=0.5, random_state=113)
@@ -189,16 +148,12 @@ print("data_y size: ", data_y.shape)
 print("train dataset size: ", X_train.shape, "\t", y_train.shape)
 print("test dataset size: ", X_val.shape, "\t", y_val.shape)
 
-D_in, H, D_out = len(data_x[1]), int((len(data_x[1]))), len(data_y[1])
+D_in, H, D_out = 10, 10, 10
 batch = 1000
 
 train_loader = Data.DataLoader(dataset=train_dataset, batch_size=batch, shuffle=True)
 val_loader = Data.DataLoader(dataset=val_dataset, batch_size=X_val.shape[0], shuffle=False)
 
-if D_out != N_CLASSES:
-    print("Adjust N_CLASSES parameter according to output dimensions!!")
-    exit()
-print("D_in: ", D_in, "D_out: ", D_out)
 epochs = 500
 model = MLP(D_in, H, D_out)
 
