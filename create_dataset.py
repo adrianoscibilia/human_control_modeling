@@ -107,9 +107,12 @@ def bag_read(file_path):
     # CONVERT TO NP ARRAYS
     error_adj_array = np.array(error_adj)
     force_array = np.array(force_adj)
-    # ref_pos_adj_array = np.array(ref_pos_adj)
-    # act_pos_adj_array = np.array(act_pos_adj)
-    return error_adj_array, force_array
+
+    # NORMALIZE
+    error_norm = (error_adj_array - np.min(error_adj_array)) / (np.max(error_adj_array) - np.min(error_adj_array))
+    force_norm = (force_array - np.min(force_array)) / (np.max(force_array) - np.min(force_array))
+
+    return error_norm, force_norm
 
 
 subjects_complete = ['/Alessandro_Scano', '/Claudia_Pagano', '/Francesco_Airoldi', '/Matteo_Malosio', '/Michele',
@@ -119,53 +122,42 @@ bag_folder_base = '/home/adriano/projects/ros_ws/src/controller_adriano/bag'
 file_extension = '.bag'
 experiment_type = 'step'
 underscore = '_'
-n_of_iterations = 11
+
+n_of_iterations = 10
+subjects = subjects_complete
 
 lenghts = []
-len_row = 0
-for n in range(0, len(subjects_complete)):
-    bag_folder = bag_folder_base + subjects_complete[n] + '/step/'
+for n in range(0, len(subjects)):
+    bag_folder = bag_folder_base + subjects[n] + '/step/'
     for i in range(1, n_of_iterations):
         experiment_number = str(i)
         file_name = experiment_type + underscore + experiment_number
         bag_input = bag_folder + file_name + file_extension
         len_row_col = find_bag_lenght(bag_input)
-        len_row = len_row + len_row_col
-    lenghts.append(len_row)
-    len_row = 0
+        lenghts.append(len_row_col)
 
 max_len = np.amax(lenghts)
 
-x_n = np.empty(0)
-y_n = np.empty(0)
-x = np.empty((len(subjects_complete), max_len))
-y = np.empty((len(subjects_complete), max_len))
-len_row = 0
 
-for n in range(0, len(subjects_complete)):
-    bag_folder = bag_folder_base + subjects_complete[n] + '/step/'
-    for i in range(1, n_of_iterations):
-        experiment_number = str(i)
+x_n = np.empty((len(subjects)*n_of_iterations, max_len))
+y_n = np.empty((len(subjects)*n_of_iterations, max_len))
+
+for n in range(0, len(subjects)):
+    bag_folder = bag_folder_base + subjects[n] + '/step/'
+    for i in range(0, n_of_iterations):
+        experiment_number = str(i+1)
         file_name = experiment_type + underscore + experiment_number
         bag_input = bag_folder + file_name + file_extension
         x_n_i, y_n_i = bag_read(bag_input)
-        len_row = len_row + len(x_n_i)
-        x_n = np.append(x_n, x_n_i)
-        y_n = np.append(y_n, y_n_i)
-        if i == (n_of_iterations - 1):
-            if len_row < max_len:
-                len_diff = max_len - len_row
-                zero_diff = np.zeros(len_diff)
-                x_n = np.append(x_n, zero_diff)
-                y_n = np.append(y_n, zero_diff)
-    x[n, :] = x_n
-    y[n, :] = y_n
-    x_n = np.empty(0)
-    y_n = np.empty(0)
-    len_row = 0
+        if len(x_n_i)<max_len:
+            len_diff = max_len - len(x_n_i)
+            zero_diff = np.zeros(len_diff)
+            x_n_i = np.append(x_n_i, zero_diff)
+            y_n_i = np.append(y_n_i, zero_diff)
+        x_n[i + n*n_of_iterations, :] = x_n_i
+        y_n[i + n*n_of_iterations, :] = y_n_i
 
-dataset = {'x': [x], 'y': [y]}
+dataset = {'x': [x_n], 'y': [y_n]}
 dataframe = pd.DataFrame(dataset)
 print("dataframe shape: ", dataframe.shape)
-dataframe.to_pickle('dataframe.pkl')
-dataframe.to_csv('dataframe.csv')
+dataframe.to_pickle('dataframe_normalized.pkl')
