@@ -6,13 +6,14 @@ import torch.utils.data as Data
 import pickle
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report
+from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from IPython.display import clear_output
 
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 TRAIN = False
-NET_FEATURES = 'mlp_8032x10_sigm_e-5_MSE_sum'
+NET_FEATURES = 'mlp_8032x10_tanhout_10k_e-5_MSE_sum'
 FILE_NAME = NET_FEATURES + '.pkl'
 fig_dir = '/home/adriano/Pictures/NN_model_Figures/'
 
@@ -34,15 +35,15 @@ class MLP(torch.nn.Module):
 
     def forward(self, x):
         x = self.linear1(x)
-        x = self.linear2(torch.sigmoid(x))
-        x = self.linear3(torch.sigmoid(x))
-        x = self.linear4(torch.sigmoid(x))
-        x = self.linear5(torch.sigmoid(x))
-        x = self.linear6(torch.sigmoid(x))
-        x = self.linear7(torch.sigmoid(x))
-        x = self.linear8(torch.sigmoid(x))
-        x = self.linear9(torch.sigmoid(x))
-        y_pred = self.linear10(x)
+        x = self.linear2(F.relu(x))
+        x = self.linear3(F.relu(x))
+        x = self.linear4(F.relu(x))
+        x = self.linear5(F.relu(x))
+        x = self.linear6(F.relu(x))
+        x = self.linear7(F.relu(x))
+        x = self.linear8(F.relu(x))
+        x = self.linear9(F.relu(x))
+        y_pred = self.linear10(torch.tanh(x))
         return y_pred
 
 
@@ -123,15 +124,15 @@ def train(model, epochs, train_loader, val_loader, log_interval, l_rate):
                 ax.set_ylabel('Loss')
                 ax.legend()
 
-                # plot average f1 score
-                fig, ax = plt.subplots()
-                ax.plot([score['macro avg']['f1-score'] for score in test_scores], label='Testing F1 Score Macro Avg')
-                ax.plot([score['macro avg']['precision'] for score in test_scores],
-                        label='Testing Precision Score Macro Avg')
-                ax.plot([score['macro avg']['recall'] for score in test_scores], label='Testing Recall Score Macro Avg')
-                ax.set_xlabel('Epoch')
-                ax.set_ylabel('Score')
-                ax.legend()
+                # # plot average f1 score
+                # fig, ax = plt.subplots()
+                # ax.plot([score['macro avg']['f1-score'] for score in test_scores], label='Testing F1 Score Macro Avg')
+                # ax.plot([score['macro avg']['precision'] for score in test_scores],
+                #         label='Testing Precision Score Macro Avg')
+                # ax.plot([score['macro avg']['recall'] for score in test_scores], label='Testing Recall Score Macro Avg')
+                # ax.set_xlabel('Epoch')
+                # ax.set_ylabel('Score')
+                # ax.legend()
 
                 plt.show()
 
@@ -219,6 +220,13 @@ if not TRAIN:
     # load model
     model = pickle.load(open(FILE_NAME, 'rb'))
 
+    # test metrics
+    r2_scores = np.empty(data_x.shape[0])
+    for i in range(data_x.shape[0]):
+        out_tensor = model(torch.from_numpy(data_x[i, :]).float().to(DEVICE))
+        out_vector = out_tensor.cpu().detach().numpy()
+        r2_scores[i] = r2_score(y_true=data_y[i, :], y_pred=out_vector)
+
     # see model predictions
     idx = np.random.randint(low=0, high=99)
     pred_tensor = model(torch.from_numpy(data_x[idx, :]).float().to(DEVICE))
@@ -237,6 +245,14 @@ if not TRAIN:
     plt.grid()
     plt.title(fig_title)
     plt.savefig(fig_dir + NET_FEATURES + '_output_' + str(idx) + '.png')
+
+    plt.figure(3)
+    plt.plot(r2_scores)
+    plt.axhline(y = np.mean(r2_scores), color='r')
+    plt.xlabel("experiment n")
+    plt.ylabel("r2 score")
+    plt.grid()
+    plt.savefig(fig_dir + NET_FEATURES + '_r2score.png')
 
     plt.show()
     plt.close()
