@@ -12,8 +12,9 @@ from IPython.display import clear_output
 
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-TRAIN = False
-NET_FEATURES = 'mlp_8032x10_tanhout_10k_e-5_MSE_sum'
+TRAIN = True
+PREDICT = False
+NET_FEATURES = 'mlp_6641x10_tanhout_10k_e-5_MSE_sum'
 FILE_NAME = NET_FEATURES + '.pkl'
 fig_dir = '/home/adriano/Pictures/NN_model_Figures/'
 
@@ -179,44 +180,33 @@ Y = dataframe["y"]
 data_x = X[0]
 data_y = Y[0]
 
-# data_x = np.transpose(data_x)
-# data_y = np.transpose(data_y)
+time = np.linspace(start=0, stop=60, num=data_x.shape[1])
+window_size = 1000
 
+# create training and validation set
 seed = 113
-X_train, X_val, y_train, y_val = train_test_split(data_x, data_y, test_size=0.2, random_state=seed)
-# X_val, X_test, y_val, y_test = train_test_split(X_tmp, y_tmp, test_size=0.5, random_state=seed)
-
-# X_train, y_train = np.transpose(X_train), np.transpose(y_train)
-# X_val, y_val = np.transpose(X_val), np.transpose(y_val)
-
-# train_dataset, test_dataset = dataset.train_test_split()
+X_tmp, X_test, y_tmp, y_test = train_test_split(np.transpose(data_x), np.transpose(data_y), test_size=0.2, shuffle=False)
+X_train, X_val, y_train, y_val = train_test_split(np.transpose(X_tmp), np.transpose(y_tmp), test_size=0.2, random_state=seed)
 train_dataset = Data.TensorDataset(torch.from_numpy(X_train).float(), torch.from_numpy(y_train).float())
 val_dataset = Data.TensorDataset(torch.from_numpy(X_val).float(), torch.from_numpy(y_val).float())
-
-print("data_x size: ", data_x.shape)
-print("data_y size: ", data_y.shape)
-print("train dataset size: ", X_train.shape, "\t", y_train.shape)
-print("validation dataset size: ", X_val.shape, "\t", y_val.shape)
-
-D_in, H, D_out = data_x.shape[1], 100, data_y.shape[1]
 batch = 1000
-
 train_loader = Data.DataLoader(dataset=train_dataset, batch_size=batch, shuffle=True)
 val_loader = Data.DataLoader(dataset=val_dataset, batch_size=X_val.shape[0], shuffle=False)
 
+t_train = np.linspace(start=0, stop=time[len(X_tmp)], num=len(X_tmp))
+D_in, H, D_out = X_train.shape[1], 100, y_train.shape[1]
+
 if TRAIN:
-    # start training
+    # initialize model and start training
     epochs = 10000
     model = MLP(D_in, H, D_out)
-
-    # model = FullyConnectedNN(input_len=D_in, output_len=D_out, hidden_dim=H, depth=5)
     train(model=model, epochs=epochs, train_loader=train_loader, val_loader=val_loader, log_interval=epochs,
           l_rate=1e-5)
 
     # save model
     pickle.dump(model, open(FILE_NAME, 'wb'))
 
-if not TRAIN:
+if PREDICT:
     # load model
     model = pickle.load(open(FILE_NAME, 'rb'))
 
@@ -233,8 +223,8 @@ if not TRAIN:
     prediction = pred_tensor.cpu().detach().numpy()
 
     # plots
-    time = np.linspace(start=0, stop=60, num=len(prediction))
-    fig_title = 'predictied vs actual force for experiment n: ' + str(idx)
+    # time = np.linspace(start=0, stop=60, num=len(prediction))
+    fig_title = 'predicted vs actual force for experiment n: ' + str(idx)
 
     plt.figure(2)
     plt.plot(time, prediction)
@@ -256,3 +246,14 @@ if not TRAIN:
 
     plt.show()
     plt.close()
+
+# idx = np.random.randint(low=0, high=79)
+# X_prova = np.zeros(data_x.shape[1])
+# X_prova[:len(X_tmp)] = X_train[idx, :len(X_tmp)]
+#
+# plt.figure(1)
+# plt.plot(time, data_x[idx, :])
+# plt.plot(time, X_prova)
+# plt.grid()
+#
+# plt.show()
