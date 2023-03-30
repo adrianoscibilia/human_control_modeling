@@ -101,11 +101,16 @@ def bag_read(file_path):
         time_adj[i] = time_adj[i] - time_adj[0]
     time_adj[0] = 0
 
-    # # CONVERT TO NP ARRAYS
-    # input_array = np.array(error_adj)
-    # output_array = np.array(force_adj)
-    # time_array = np.array(time)
-    return ref_pos_adj, force_adj, time_adj
+    # CONVERT TO NP ARRAYS
+    input_array = np.array(error_adj)
+    output_array = np.array(force_adj)
+    time_array = np.array(time)
+    input_norm = []
+    output_norm = []
+    for idx in range(0, len(error_adj)):
+        input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
+        output_norm.append((output_array[idx] - np.mean(output_array))/np.std(output_array))
+    return input_array, output_norm, time_adj
 
 
 def arrays_to_dataframe(input, output, time):
@@ -115,20 +120,20 @@ def arrays_to_dataframe(input, output, time):
 
     # Add delayed copies
     delays = [50, 100, 200]
-    input_del = [np.empty(len(input)), np.empty(len(input)), np.empty(len(input))]
+    # input_del = [np.empty(len(input)), np.empty(len(input)), np.empty(len(input))]
     output_del = [np.empty(len(output)), np.empty(len(output)), np.empty(len(output))]
     idx = 0
     for d in delays:
-        input_del[idx][:d] = 0
-        input_del[idx][d:len(input)] = input[d:len(input)]
+        # input_del[idx][:d] = 0
+        # input_del[idx][d:len(input)] = input[d:len(input)]
         output_del[idx][:d] = 0
         output_del[idx][d:len(output)] = output[d:len(output)]
         idx += 1
-    input_df_d1 = pd.DataFrame({'time': time, 'data': input_del[0]})
+    # input_df_d1 = pd.DataFrame({'time': time, 'data': input_del[0]})
     output_df_d1 = pd.DataFrame({'time': time, 'data': output_del[0]})
-    input_df_d2 = pd.DataFrame({'time': time, 'data': input_del[1]})
+    # input_df_d2 = pd.DataFrame({'time': time, 'data': input_del[1]})
     output_df_d2 = pd.DataFrame({'time': time, 'data': output_del[1]})
-    input_df_d3 = pd.DataFrame({'time': time, 'data': input_del[2]})
+    # input_df_d3 = pd.DataFrame({'time': time, 'data': input_del[2]})
     output_df_d3 = pd.DataFrame({'time': time, 'data': output_del[2]})
 
     # # NORMALIZE
@@ -138,7 +143,7 @@ def arrays_to_dataframe(input, output, time):
     # for x in input_df.columns:
     #     input_scalers[x] = StandardScaler().fit(input_df[x].values.reshape(-1, 1))
     #     output_scalers[x] = StandardScaler().fit(output_df[x].values.reshape(-1, 1))
-    return input_df, output_df, input_df_d1, output_df_d1, input_df_d2, output_df_d2, input_df_d3, output_df_d3
+    return input_df, output_df, output_df_d1, output_df_d2, output_df_d3
 
 
 subjects_complete = ['/Alessandro_Scano', '/Claudia_Pagano', '/Francesco_Airoldi', '/Matteo_Malosio', '/Michele',
@@ -178,11 +183,11 @@ for n in range(0, len(subjects)):
             x_n_i = x_n_i[:min_len]
             y_n_i = y_n_i[:min_len]
             t_n_i = t_n_i[:min_len]
-        x_n, y_n, x_n_d1, y_n_d1, x_n_d2, y_n_d2, x_n_d3, y_n_d3 = arrays_to_dataframe(x_n_i, y_n_i, t_n_i)
+        x_n, y_n, y_n_d1, y_n_d2, y_n_d3 = arrays_to_dataframe(x_n_i, y_n_i, t_n_i)
         x.append(x_n)  # [i + n*n_of_iterations, :] = x_n_i
-        x.append(x_n_d1)
-        x.append(x_n_d2)
-        x.append(x_n_d3)
+        x.append(x_n)
+        x.append(x_n)
+        x.append(x_n)
         y.append(y_n)  # [i + n*n_of_iterations, :] = y_n_i
         y.append(y_n_d1)
         y.append(y_n_d2)
@@ -192,4 +197,4 @@ for n in range(0, len(subjects)):
 
 dataset = pd.DataFrame({'x': x, 'y': y})
 print("dataset shape: ", dataset.shape)
-dataset.to_pickle('dataset_refpos_force_timeseries_del.pkl')
+dataset.to_pickle('dataset_error_force_del_norm.pkl')
