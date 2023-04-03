@@ -5,6 +5,7 @@ import numpy as np
 from bagpy import bagreader
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from scipy.io import savemat
 
 
 def find_bag_lenght(file_path):
@@ -102,21 +103,24 @@ def bag_read(file_path):
     time_adj[0] = 0
 
     # CONVERT TO NP ARRAYS
-    input_array = np.array(error_adj)
+    input_array = np.array(ref_pos_adj)
     output_array = np.array(force_adj)
-    time_array = np.array(time)
-    input_norm = []
+    time_array = np.array(time_adj)
+    # input_norm = []
     output_norm = []
     for idx in range(0, len(error_adj)):
-        input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
+        # input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
         output_norm.append((output_array[idx] - np.mean(output_array))/np.std(output_array))
-    return input_array, output_norm, time_adj
+    output_norm_array = np.array(output_norm)
+    return input_array, output_norm_array, time_array
 
 
 def arrays_to_dataframe(input, output, time):
     # Init dataframes timeseries
-    input_df = pd.DataFrame({'time': time, 'data': input})
+    # input_df = pd.DataFrame({'time': time, 'data': input})
+    input_df = {'time': time, 'data': input}
     output_df = pd.DataFrame({'time': time, 'data': output})
+    output_df = {'time': time, 'data': output}
 
     # Add delayed copies
     delays = [50, 100, 200]
@@ -131,10 +135,13 @@ def arrays_to_dataframe(input, output, time):
         idx += 1
     # input_df_d1 = pd.DataFrame({'time': time, 'data': input_del[0]})
     output_df_d1 = pd.DataFrame({'time': time, 'data': output_del[0]})
+    output_df_d1 = {'time': time, 'data': output_del[0]}
     # input_df_d2 = pd.DataFrame({'time': time, 'data': input_del[1]})
     output_df_d2 = pd.DataFrame({'time': time, 'data': output_del[1]})
+    output_df_d2 = {'time': time, 'data': output_del[1]}
     # input_df_d3 = pd.DataFrame({'time': time, 'data': input_del[2]})
     output_df_d3 = pd.DataFrame({'time': time, 'data': output_del[2]})
+    output_df_d3 = {'time': time, 'data': output_del[2]}
 
     # # NORMALIZE
     # # Fit scalers
@@ -194,7 +201,8 @@ for n in range(0, len(subjects)):
         y.append(y_n_d3)
 
 
-
-dataset = pd.DataFrame({'x': x, 'y': y})
-print("dataset shape: ", dataset.shape)
-dataset.to_pickle('dataset_error_force_del_norm.pkl')
+# dataset = pd.DataFrame({'x': x, 'y': y})
+dataset = {'x': x, 'y': y}
+# print("dataset shape: ", dataset.shape)
+# dataset.to_pickle('dataset_error_force_del_norm.pkl')
+savemat(file_name='dataset_ref_force_del_norm.mat', mdict=dataset)
