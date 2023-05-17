@@ -103,13 +103,13 @@ def bag_read(file_path):
     time_adj[0] = 0
 
     # CONVERT TO NP ARRAYS
-    input_array = np.array(ref_pos_adj)
+    input_array = np.array(error_adj)
     output_array = np.array(force_adj)
     time_array = np.array(time_adj)
-    # input_norm = []
+    input_norm = []
     output_norm = []
     for idx in range(0, len(error_adj)):
-        # input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
+        input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
         output_norm.append((output_array[idx] - np.mean(output_array))/np.std(output_array))
     output_norm_array = np.array(output_norm)
     return input_array, output_norm_array, time_array
@@ -123,7 +123,7 @@ def arrays_to_dataframe(input, output, time):
     output_df = {'time': time, 'data': output}
 
     # Add delayed copies
-    delays = [50, 100, 200]
+    delays = [125, 625, 1250]
     # input_del = [np.empty(len(input)), np.empty(len(input)), np.empty(len(input))]
     output_del = [np.empty(len(output)), np.empty(len(output)), np.empty(len(output))]
     idx = 0
@@ -205,4 +205,4 @@ for n in range(0, len(subjects)):
 dataset = {'x': x, 'y': y}
 # print("dataset shape: ", dataset.shape)
 # dataset.to_pickle('dataset_error_force_del_norm.pkl')
-savemat(file_name='dataset_ref_force_del_norm.mat', mdict=dataset)
+savemat(file_name='data_error_force_delsecsint_norm.pkl', mdict=dataset)

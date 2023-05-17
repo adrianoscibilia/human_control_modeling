@@ -15,10 +15,10 @@ import string
 warnings.simplefilter('ignore', ConvergenceWarning)
 TRAINING_REPS = 10
 LOG_INTERVAL = 1
-TRAIN = True
-FIRST_TRAINING = True
+TRAIN = False
+FIRST_TRAINING = False
 MOD_ORD = 5
-FILE_NAME = 'armax5_meanpar_err_force_delout_norm.pkl'
+FILE_NAME = 'armax5_err_force_delout_norm.pkl'
 
 # Load dataset
 dataframe = pd.read_pickle('./dataset_error_force_del_norm.pkl')
@@ -61,8 +61,8 @@ if TRAIN:
     # Save model
     pickle.dump(final_res, open(FILE_NAME, 'wb'))
 else:
-    res = pickle.load(open(FILE_NAME, 'rb'))
-    # res = model.fit()
+    model = pickle.load(open(FILE_NAME, 'rb'))
+    res = model.fit()
 
 # Forecast
 rand_idx = np.random.randint(low=0, high=99)

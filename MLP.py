@@ -9,12 +9,13 @@ from sklearn.metrics import classification_report
 from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from IPython.display import clear_output
+from scipy.io import loadmat
 
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-TRAIN = True
-PREDICT = False
-NET_FEATURES = 'mlp_6641x10_tanhout_10k_e-5_MSE_sum'
+TRAIN = False
+PREDICT = True
+NET_FEATURES = 'mlp_6641x10_tanhout_10k_e-5_MSEsum_delsecsint'
 FILE_NAME = NET_FEATURES + '.pkl'
 fig_dir = '/home/adriano/Pictures/NN_model_Figures/'
 
@@ -172,11 +173,14 @@ def train(model, epochs, train_loader, val_loader, log_interval, l_rate):
             # print(
             #     f"Epoch {epoch + 1}/{epochs}: Training Loss: {epoch_train_loss:.4f} Test Loss: {epoch_val_loss:.4f} \nTest Score:\n {test_score} ")
 
-
+# mat_data = loadmat('./data_error_force_delsecsint_norm.mat')
+# dataframe = pd.DataFrame(mat_data)
 dataframe = pd.read_pickle('./dataframe_normalized.pkl')
 
 X = dataframe["x"]
 Y = dataframe["y"]
+# X = mat_data['x']
+# Y = mat_data['y']
 data_x = X[0]
 data_y = Y[0]
 
@@ -210,25 +214,26 @@ if PREDICT:
     # load model
     model = pickle.load(open(FILE_NAME, 'rb'))
 
-    # test metrics
-    r2_scores = np.empty(data_x.shape[0])
-    for i in range(data_x.shape[0]):
-        out_tensor = model(torch.from_numpy(data_x[i, :]).float().to(DEVICE))
-        out_vector = out_tensor.cpu().detach().numpy()
-        r2_scores[i] = r2_score(y_true=data_y[i, :], y_pred=out_vector)
+    # # test metrics
+    # r2_scores = np.empty(data_x.shape[0])
+    # for i in range(data_x.shape[0]):
+    #     out_tensor = model(torch.from_numpy(data_x[i, -D_in:]).float().to(DEVICE))
+    #     out_vector = out_tensor.cpu().detach().numpy()
+    #     r2_scores[i] = r2_score(y_true=data_y[i, -D_out:], y_pred=out_vector)
 
     # see model predictions
     idx = np.random.randint(low=0, high=99)
-    pred_tensor = model(torch.from_numpy(data_x[idx, :]).float().to(DEVICE))
+    pred_tensor = model(torch.from_numpy(data_x[idx, -D_in:]).float().to(DEVICE))
     prediction = pred_tensor.cpu().detach().numpy()
 
     # plots
-    # time = np.linspace(start=0, stop=60, num=len(prediction))
+    plt_time = np.linspace(start=time[D_in], stop=60, num=len(prediction))
     fig_title = 'predicted vs actual force for experiment n: ' + str(idx)
 
     plt.figure(2)
-    plt.plot(time, prediction)
-    plt.plot(time, data_y[idx, :])
+    plt.plot(plt_time, prediction)
+    plt.plot(plt_time, data_y[idx, -D_out:])
+    plt.vlines(50, -0.2, 1.0, colors='r')
     plt.legend(['prediction', 'truth'])
     plt.xlabel("time")
     plt.ylabel("force")
@@ -236,13 +241,13 @@ if PREDICT:
     plt.title(fig_title)
     plt.savefig(fig_dir + NET_FEATURES + '_output_' + str(idx) + '.png')
 
-    plt.figure(3)
-    plt.plot(r2_scores)
-    plt.axhline(y = np.mean(r2_scores), color='r')
-    plt.xlabel("experiment n")
-    plt.ylabel("r2 score")
-    plt.grid()
-    plt.savefig(fig_dir + NET_FEATURES + '_r2score.png')
+    # plt.figure(3)
+    # plt.plot(r2_scores)
+    # plt.axhline(y = np.mean(r2_scores), color='r')
+    # plt.xlabel("experiment n")
+    # plt.ylabel("r2 score")
+    # plt.grid()
+    # plt.savefig(fig_dir + NET_FEATURES + '_r2score.png')
 
     plt.show()
     plt.close()
