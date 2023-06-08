@@ -111,8 +111,9 @@ def bag_read(file_path):
     for idx in range(0, len(error_adj)):
         input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
         output_norm.append((output_array[idx] - np.mean(output_array))/np.std(output_array))
+    input_norm_array = np.array(input_norm)
     output_norm_array = np.array(output_norm)
-    return input_array, output_norm_array, time_array
+    return input_norm_array, output_norm_array, time_array
 
 
 def arrays_to_dataframe(input, output, time):
@@ -135,13 +136,13 @@ def arrays_to_dataframe(input, output, time):
         idx += 1
     # input_df_d1 = pd.DataFrame({'time': time, 'data': input_del[0]})
     output_df_d1 = pd.DataFrame({'time': time, 'data': output_del[0]})
-    output_df_d1 = {'time': time, 'data': output_del[0]}
+    # output_df_d1 = {'time': time, 'data': output_del[0]}
     # input_df_d2 = pd.DataFrame({'time': time, 'data': input_del[1]})
     output_df_d2 = pd.DataFrame({'time': time, 'data': output_del[1]})
-    output_df_d2 = {'time': time, 'data': output_del[1]}
+    # output_df_d2 = {'time': time, 'data': output_del[1]}
     # input_df_d3 = pd.DataFrame({'time': time, 'data': input_del[2]})
     output_df_d3 = pd.DataFrame({'time': time, 'data': output_del[2]})
-    output_df_d3 = {'time': time, 'data': output_del[2]}
+    # output_df_d3 = {'time': time, 'data': output_del[2]}
 
     # # NORMALIZE
     # # Fit scalers
@@ -177,8 +178,8 @@ for n in range(0, len(subjects)):
 min_len = np.amin(lenghts)
 
 
-x = [] # np.empty((len(subjects)*n_of_iterations, min_len))
-y = [] # np.empty((len(subjects)*n_of_iterations, min_len))
+x = []  # np.empty((len(subjects)*n_of_iterations, min_len))
+y = []  # np.empty((len(subjects)*n_of_iterations, min_len))
 for n in range(0, len(subjects)):
     bag_folder = bag_folder_base + subjects[n] + '/step/'
     for i in range(0, n_of_iterations):
@@ -201,8 +202,8 @@ for n in range(0, len(subjects)):
         y.append(y_n_d3)
 
 
-# dataset = pd.DataFrame({'x': x, 'y': y})
-dataset = {'x': x, 'y': y}
+dataset = pd.DataFrame({'x': x, 'y': y})
+# dataset = {'x': x, 'y': y}
 # print("dataset shape: ", dataset.shape)
-# dataset.to_pickle('dataset_error_force_del_norm.pkl')
-savemat(file_name='data_error_force_delsecsint_norm.pkl', mdict=dataset)
+dataset.to_pickle('dataset_error_force_del_norm_1705.pkl')
+# savemat(file_name='data_error_force_delsecsint_norm.pkl', mdict=dataset)
