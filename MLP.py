@@ -173,9 +173,10 @@ def train(model, epochs, train_loader, val_loader, log_interval, l_rate):
             # print(
             #     f"Epoch {epoch + 1}/{epochs}: Training Loss: {epoch_train_loss:.4f} Test Loss: {epoch_val_loss:.4f} \nTest Score:\n {test_score} ")
 
-# mat_data = loadmat('./data_error_force_delsecsint_norm.mat')
-# dataframe = pd.DataFrame(mat_data)
-dataframe = pd.read_pickle('./dataframe_normalized.pkl')
+
+dataframe = pd.read_pickle('./dataset_error_force_del_norm_1705.pkl')
+armax = loadmat('./armax_err_force_iter2.mat')
+armax_df = pd.DataFrame(armax)
 
 X = dataframe["x"]
 Y = dataframe["y"]

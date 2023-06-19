@@ -47,7 +47,7 @@ def bag_read(file_path):
     experiment_window_pd = pd.read_csv(EXPERIMENT_WINDOW_MSG)
 
     # create vectors
-    time = act_pos_pd['Time'] - act_pos_pd.loc[0, 'Time']
+    # time = act_pos_pd['Time'] - act_pos_pd.loc[0, 'Time']
     # h_err_x = h_err_pd['pose.position.x']
     # h_err_y = h_err_pd['pose.position.y']
     act_pos_x = act_pos_pd['pose.position.x']
@@ -71,14 +71,14 @@ def bag_read(file_path):
     ref_pos_input = ref_pos
     act_pos_input = act_pos
 
-    time_adj = []
-    h_err_adj = []
+    # time_adj = []
+    # h_err_adj = []
     force_adj = []
     ref_pos_adj = []
     act_pos_adj = []
     lenghts = []
     error_adj = []
-    error_adj_dot = []
+    # error_adj_dot = []
     lenghts.append(len(h_force))
     lenghts.append(len(ref_pos_input))
     lenghts.append(len(act_pos_input))
@@ -92,36 +92,38 @@ def bag_read(file_path):
 
     for idx in range(0, minimum_lenght):
         if window_vector[idx] == 1:
-            time_adj.append(time[idx])
+            # time_adj.append(time[idx])
             force_adj.append(h_force[idx])
             ref_pos_adj.append(ref_pos_input[idx])
             act_pos_adj.append(act_pos_input[idx])
             error_adj.append(ref_pos_input[idx] - act_pos_input[idx])
 
-    for i in range(1, len(time_adj)):
-        time_adj[i] = time_adj[i] - time_adj[0]
-    time_adj[0] = 0
+    # for i in range(1, len(time_adj)):
+    #     time_adj[i] = time_adj[i] - time_adj[0]
+    # time_adj[0] = 0
 
     # CONVERT TO NP ARRAYS
     input_array = np.array(error_adj)
     output_array = np.array(force_adj)
-    time_array = np.array(time_adj)
-    input_norm = []
-    output_norm = []
-    for idx in range(0, len(error_adj)):
-        input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
-        output_norm.append((output_array[idx] - np.mean(output_array))/np.std(output_array))
-    input_norm_array = np.array(input_norm)
-    output_norm_array = np.array(output_norm)
-    return input_norm_array, output_norm_array, time_array
+    # time_array = np.array(time_adj)
+    # input_norm = []
+    # output_norm = []
+    # for idx in range(0, len(error_adj)):
+    #     input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
+    #     output_norm.append((output_array[idx] - np.mean(output_array))/np.std(output_array))
+    input_norm_array = np.array(input_array)
+    output_norm_array = np.array(output_array)
+    return input_norm_array, output_norm_array
 
 
-def arrays_to_dataframe(input, output, time):
+def arrays_to_dataframe(input, output):
     # Init dataframes timeseries
     # input_df = pd.DataFrame({'time': time, 'data': input})
-    input_df = {'time': time, 'data': input}
-    output_df = pd.DataFrame({'time': time, 'data': output})
-    output_df = {'time': time, 'data': output}
+    # input_df = {'time': time, 'data': input}
+    input_df = {'data': input}
+    # output_df = pd.DataFrame({'time': time, 'data': output})
+    # output_df = {'time': time, 'data': output}
+    output_df = {'data': output}
 
     # Add delayed copies
     delays = [125, 625, 1250]
@@ -134,15 +136,12 @@ def arrays_to_dataframe(input, output, time):
         output_del[idx][:d] = 0
         output_del[idx][d:len(output)] = output[d:len(output)]
         idx += 1
-    # input_df_d1 = pd.DataFrame({'time': time, 'data': input_del[0]})
-    output_df_d1 = pd.DataFrame({'time': time, 'data': output_del[0]})
-    # output_df_d1 = {'time': time, 'data': output_del[0]}
-    # input_df_d2 = pd.DataFrame({'time': time, 'data': input_del[1]})
-    output_df_d2 = pd.DataFrame({'time': time, 'data': output_del[1]})
-    # output_df_d2 = {'time': time, 'data': output_del[1]}
-    # input_df_d3 = pd.DataFrame({'time': time, 'data': input_del[2]})
-    output_df_d3 = pd.DataFrame({'time': time, 'data': output_del[2]})
-    # output_df_d3 = {'time': time, 'data': output_del[2]}
+    # output_df_d1 = pd.DataFrame({'time': time, 'data': output_del[0]})
+    output_df_d1 = pd.DataFrame({'data': output_del[0]})
+    # output_df_d2 = pd.DataFrame({'time': time, 'data': output_del[1]})
+    output_df_d2 = pd.DataFrame({'data': output_del[1]})
+    # output_df_d3 = pd.DataFrame({'time': time, 'data': output_del[2]})
+    output_df_d3 = pd.DataFrame({'data': output_del[2]})
 
     # # NORMALIZE
     # # Fit scalers
@@ -186,12 +185,12 @@ for n in range(0, len(subjects)):
         experiment_number = str(i+1)
         file_name = experiment_type + underscore + experiment_number
         bag_input = bag_folder + file_name + file_extension
-        x_n_i, y_n_i, t_n_i = bag_read(bag_input)
+        x_n_i, y_n_i = bag_read(bag_input)
         if len(x_n_i) > min_len:
             x_n_i = x_n_i[:min_len]
             y_n_i = y_n_i[:min_len]
-            t_n_i = t_n_i[:min_len]
-        x_n, y_n, y_n_d1, y_n_d2, y_n_d3 = arrays_to_dataframe(x_n_i, y_n_i, t_n_i)
+            # t_n_i = t_n_i[:min_len]
+        x_n, y_n, y_n_d1, y_n_d2, y_n_d3 = arrays_to_dataframe(x_n_i, y_n_i)
         x.append(x_n)  # [i + n*n_of_iterations, :] = x_n_i
         x.append(x_n)
         x.append(x_n)
@@ -205,5 +204,5 @@ for n in range(0, len(subjects)):
 dataset = pd.DataFrame({'x': x, 'y': y})
 # dataset = {'x': x, 'y': y}
 # print("dataset shape: ", dataset.shape)
-dataset.to_pickle('dataset_error_force_del_norm_1705.pkl')
+dataset.to_pickle('dataset_error_force_del_raw_1506.pkl')
 # savemat(file_name='data_error_force_delsecsint_norm.pkl', mdict=dataset)
