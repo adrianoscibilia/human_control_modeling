@@ -175,35 +175,43 @@ def train(model, epochs, train_loader, val_loader, log_interval, l_rate):
 
 
 dataframe = pd.read_pickle('./dataset_error_force_del_norm_1705.pkl')
-armax = loadmat('./armax_err_force_iter2.mat')
-armax_df = pd.DataFrame(armax)
+armax = loadmat('./armax_coeff_2.mat')
+armax_coeff = np.array(armax['coeff_vector'])
+armax_df = pd.DataFrame(armax_coeff)
 
 X = dataframe["x"]
 Y = dataframe["y"]
-# X = mat_data['x']
-# Y = mat_data['y']
-data_x = X[0]
-data_y = Y[0]
+
+data_x = np.empty((len(X.values), len(X.values[0]["data"])))
+data_y = np.empty((len(Y.values), len(Y.values[0]["data"])))
+for i in range(0, len(X.values)):
+    data_x[i, :] = X.values[i]["data"]
+    data_y[i, :] = Y.values[i]["data"]
 
 time = np.linspace(start=0, stop=60, num=data_x.shape[1])
 window_size = 1000
 
 # create training and validation set
 seed = 113
-X_tmp, X_test, y_tmp, y_test = train_test_split(np.transpose(data_x), np.transpose(data_y), test_size=0.2, shuffle=False)
-X_train, X_val, y_train, y_val = train_test_split(np.transpose(X_tmp), np.transpose(y_tmp), test_size=0.2, random_state=seed)
+X_train, X_tmp, y_train, y_tmp = train_test_split(np.transpose(data_x), np.transpose(data_y), test_size=0.3, shuffle=False)
+X_test, X_val, y_test, y_val = train_test_split(X_tmp, y_tmp, test_size=0.5, shuffle=False)
 train_dataset = Data.TensorDataset(torch.from_numpy(X_train).float(), torch.from_numpy(y_train).float())
 val_dataset = Data.TensorDataset(torch.from_numpy(X_val).float(), torch.from_numpy(y_val).float())
-batch = 1000
-train_loader = Data.DataLoader(dataset=train_dataset, batch_size=batch, shuffle=True)
-val_loader = Data.DataLoader(dataset=val_dataset, batch_size=X_val.shape[0], shuffle=False)
 
-t_train = np.linspace(start=0, stop=time[len(X_tmp)], num=len(X_tmp))
-D_in, H, D_out = X_train.shape[1], 100, y_train.shape[1]
 
 if TRAIN:
     # initialize model and start training
     epochs = 10000
+    batch = 1000
+
+    invals = []
+    idx = np.random.randint()
+    for k in range(0,4): invals.append(y_train)
+
+    train_loader = Data.DataLoader(dataset=train_dataset, batch_size=batch, shuffle=False)
+    val_loader = Data.DataLoader(dataset=val_dataset, batch_size=X_val.shape[0], shuffle=False)
+
+    D_in, H, D_out = armax_coeff.shape[1], 100, 1
     model = MLP(D_in, H, D_out)
     train(model=model, epochs=epochs, train_loader=train_loader, val_loader=val_loader, log_interval=epochs,
           l_rate=1e-5)
