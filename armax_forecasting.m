@@ -86,7 +86,7 @@ load("armax_0405_sim", "sys");
 % end
 % save("narxnet_0606_1623", "net");
 % save("narxnet_record_0606_1623", "tr");
-load("narxnet_0606_1623", "net");
+% load("narxnet_0606_1623", "net");
 
 
 % SIMULATE, FORECAST, PLOT
@@ -101,8 +101,8 @@ load("narxnet_0606_1623", "net");
 idx = randi(400);
 
 % sim_out = sim(armax_model, data.u(1:test_end, idx));
-net_out = net(num2cell(data.InputData(1:test_end, idx).'), Xi, Ai);
-% sim_out2 = sim(sys, data.u(1:test_end, idx));
+% net_out = net(num2cell(data.InputData(1:test_end, idx).'), Xi, Ai);
+sim_out2 = sim(sys, data.u(1:test_end, idx));
 
 % plot(time, data.y(1:test_end, idx));
 % hold on;
@@ -114,7 +114,7 @@ net_out = net(num2cell(data.InputData(1:test_end, idx).'), Xi, Ai);
 figure;
 plot(time, data.y(1:test_end, idx));
 hold on;
-plot(time, net_out);
+plot(time, sim_out2);
 xline(50, '--r');
 legend('measured', 'simulated', 'train/test division');
 grid on;
