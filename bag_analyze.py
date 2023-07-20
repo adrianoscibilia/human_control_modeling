@@ -93,35 +93,36 @@ for i in range(1, len(time_adj)):
     time_adj[i] = time_adj[i] - time_adj[0]
 time_adj[0] = 0
 
-# # DERIVATIVE
-# error_adj_dot = np.gradient(h_err_adj)
-# error_adj_dot_plt = np.array(error_adj_dot)
-# error_adj_dot_plt_inv = error_adj_dot_plt * -1
-#
-# # FIND DELAY WITH MAX AND MINS
-# error_adj_plt = np.array(h_err_adj)
-# error_adj_plt_inv = error_adj_plt * -1
-# peaks, _ = signal.find_peaks(error_adj_dot_plt, height=0.02, distance=150)
-# # mins, _ = signal.find_peaks(error_adj_plt_inv, height=-0.02)
-#
-# reactions = []
-# for i in range(0, len(peaks)):
-#     for j in range(0, len(error_adj_dot_plt)):
-#         if (j > peaks[i]):
-#             if (error_adj_dot_plt[j] < -0.0002):
-#                 reactions.append(j)
-#                 break
-#
-# reactions_plt = np.array(reactions)
-#
-# delays = []
-# delay_lenght = len(peaks)
-# if len(reactions_plt) < len(peaks):
-#     delay_lenght = len(reactions_plt)
-#
-# for i in range(0, delay_lenght):
-#     delays.append((reactions_plt[i] - peaks[i]) * 0.008)
-# delay_mean = np.mean(delays)
+# DERIVATIVE
+error_adj_dot = np.gradient(h_err_adj)
+error_adj_dot_plt = np.array(error_adj_dot)
+error_adj_dot_plt_inv = error_adj_dot_plt * -1
+
+# FIND DELAY WITH MAX AND MINS
+error_adj_plt = np.array(h_err_adj)
+error_adj_plt_inv = error_adj_plt * -1
+peaks, _ = signal.find_peaks(error_adj_dot_plt, height=0.02, distance=150)
+# mins, _ = signal.find_peaks(error_adj_plt_inv, height=-0.02)
+
+reactions = []
+for i in range(0, len(peaks)):
+    for j in range(0, len(error_adj_dot_plt)):
+        if (j > peaks[i]):
+            if (error_adj_dot_plt[j] < -0.0002):
+                reactions.append(j)
+                break
+
+reactions_plt = np.array(reactions)
+
+delays = []
+delay_lenght = len(peaks)
+
+if len(reactions_plt) < len(peaks):
+    delay_lenght = len(reactions_plt)
+
+for i in range(0, delay_lenght):
+    delays.append((reactions_plt[i] - peaks[i]) * 0.008)
+delay_mean = np.mean(delays)
 
 error_adj_array = np.array(error_adj)
 force_array = np.array(force_adj)

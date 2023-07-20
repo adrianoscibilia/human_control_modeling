@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+import pickle
 
 import matplotlib.pyplot as plt
 import numpy as np
 from bagpy import bagreader
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from scipy.io import savemat
 
 
@@ -98,87 +100,89 @@ def bag_read(file_path):
             act_pos_adj.append(act_pos_input[idx])
             error_adj.append(ref_pos_input[idx] - act_pos_input[idx])
 
-    # for i in range(1, len(time_adj)):
-    #     time_adj[i] = time_adj[i] - time_adj[0]
-    # time_adj[0] = 0
-
     # CONVERT TO NP ARRAYS
     input_array = np.array(error_adj)
     output_array = np.array(force_adj)
-    # time_array = np.array(time_adj)
-    # input_norm = []
-    # output_norm = []
-    # for idx in range(0, len(error_adj)):
-    #     input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
-    #     output_norm.append((output_array[idx] - np.mean(output_array))/np.std(output_array))
-    input_norm_array = np.array(input_array)
-    output_norm_array = np.array(output_array)
+
+    input_norm = []
+    output_norm = []
+    for idx in range(0, len(error_adj)):
+        input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
+        output_norm.append((output_array[idx] - np.mean(output_array))/np.std(output_array))
+        # input_norm.append((input_array[idx] - np.min(input_array))/(np.max(input_array) - np.min(input_array)))
+        # output_norm.append((output_array[idx] - np.min(output_array))/(np.max(output_array) - np.min(output_array)))
+
+    input_norm_array = np.array(input_norm)
+    output_norm_array = np.array(output_norm)
+
     return input_norm_array, output_norm_array
 
 
-def arrays_to_dataframe(input, output):
-    # Init dataframes timeseries
-    # input_df = pd.DataFrame({'time': time, 'data': input})
-    # input_df = {'time': time, 'data': input}
-    input_df = {'data': input}
-    # output_df = pd.DataFrame({'time': time, 'data': output})
-    # output_df = {'time': time, 'data': output}
-    output_df = {'data': output}
+def arrays_to_dataframe(input, output, DEL):
 
-    # Add delayed copies
-    delays = [125, 625, 1250]
-    # input_del = [np.empty(len(input)), np.empty(len(input)), np.empty(len(input))]
-    output_del = [np.empty(len(output)), np.empty(len(output)), np.empty(len(output))]
-    idx = 0
-    for d in delays:
-        # input_del[idx][:d] = 0
-        # input_del[idx][d:len(input)] = input[d:len(input)]
-        output_del[idx][:d] = 0
-        output_del[idx][d:len(output)] = output[d:len(output)]
-        idx += 1
-    # output_df_d1 = pd.DataFrame({'time': time, 'data': output_del[0]})
-    output_df_d1 = pd.DataFrame({'data': output_del[0]})
-    # output_df_d2 = pd.DataFrame({'time': time, 'data': output_del[1]})
-    output_df_d2 = pd.DataFrame({'data': output_del[1]})
-    # output_df_d3 = pd.DataFrame({'time': time, 'data': output_del[2]})
-    output_df_d3 = pd.DataFrame({'data': output_del[2]})
+    input_df = pd.DataFrame({'data': input})
+    output_df = pd.DataFrame({'data': output})
 
-    # # NORMALIZE
-    # # Fit scalers
-    # input_scalers = {}
-    # output_scalers = {}
-    # for x in input_df.columns:
-    #     input_scalers[x] = StandardScaler().fit(input_df[x].values.reshape(-1, 1))
-    #     output_scalers[x] = StandardScaler().fit(output_df[x].values.reshape(-1, 1))
-    return input_df, output_df, output_df_d1, output_df_d2, output_df_d3
+    if DEL:
+        # Add delayed copies
+        delays = [125, 625, 1250]
+        output_del = [np.empty(len(output)), np.empty(len(output)), np.empty(len(output))]
+        idx = 0
+
+        for d in delays:
+            output_del[idx][:d] = 0
+            output_del[idx][d:len(output)] = output[d:len(output)]
+            idx += 1
+
+        output_df_d1 = pd.DataFrame({'data': output_del[0]})
+        output_df_d2 = pd.DataFrame({'data': output_del[1]})
+        output_df_d3 = pd.DataFrame({'data': output_del[2]})
+
+        return input_df, output_df, output_df_d1, output_df_d2, output_df_d3
+    else:
+        # NORMALIZE
+        # Fit scalers
+
+        # input_scaler = StandardScaler().fit(input_df.data.values.reshape(-1, 1))
+        # output_scaler = StandardScaler().fit(output_df.data.values.reshape(-1, 1))
+        # input_scaler = MinMaxScaler().fit(input_df.data.values.reshape(-1, 1))
+        # output_scaler = MinMaxScaler().fit(output_df.data.values.reshape(-1, 1))
+        return input_df, output_df  # input_scaler, output_scaler
+
+
 
 
 subjects_complete = ['/Alessandro_Scano', '/Claudia_Pagano', '/Francesco_Airoldi', '/Matteo_Malosio', '/Michele',
                      '/Giorgio_Nicola', '/Paolo_Franceschi', '/Marco_Faroni', '/Stefano_Mutti', '/Trunal']
 subjects = ['/Claudia_Pagano', '/Marco_Faroni']
-bag_folder_base = '/home/adriano/projects/bag/controller_adriano'
+bag_folder_base = '/home/adriano/projects/bag/controller_adriano/'
 file_extension = '.bag'
 experiment_type = 'step'
 underscore = '_'
 
 n_of_iterations = 10
 subjects = subjects_complete
-
-lenghts = []
-for n in range(0, len(subjects)):
-    bag_folder = bag_folder_base + subjects[n] + '/step/'
-    for i in range(0, n_of_iterations):
-        experiment_number = str(i+1)
-        file_name = experiment_type + underscore + experiment_number
-        bag_input = bag_folder + file_name + file_extension
-        len_row_col = find_bag_lenght(bag_input)
-        lenghts.append(len_row_col)
-
-min_len = np.amin(lenghts)
+DEL = False
 
 
-x = []  # np.empty((len(subjects)*n_of_iterations, min_len))
-y = []  # np.empty((len(subjects)*n_of_iterations, min_len))
+# lenghts = []
+# for n in range(0, len(subjects)):
+#     bag_folder = bag_folder_base + subjects[n] + '/step/'
+#     for i in range(0, n_of_iterations):
+#         experiment_number = str(i+1)
+#         file_name = experiment_type + underscore + experiment_number
+#         bag_input = bag_folder + file_name + file_extension
+#         len_row_col = find_bag_lenght(bag_input)
+#         lenghts.append(len_row_col)
+#
+# min_len = np.amin(lenghts)
+
+min_len = 7500
+
+x = []
+y = []
+x_scalers = []
+y_scalers = []
 for n in range(0, len(subjects)):
     bag_folder = bag_folder_base + subjects[n] + '/step/'
     for i in range(0, n_of_iterations):
@@ -189,20 +193,28 @@ for n in range(0, len(subjects)):
         if len(x_n_i) > min_len:
             x_n_i = x_n_i[:min_len]
             y_n_i = y_n_i[:min_len]
-            # t_n_i = t_n_i[:min_len]
-        x_n, y_n, y_n_d1, y_n_d2, y_n_d3 = arrays_to_dataframe(x_n_i, y_n_i)
-        x.append(x_n)  # [i + n*n_of_iterations, :] = x_n_i
-        x.append(x_n)
-        x.append(x_n)
-        x.append(x_n)
-        y.append(y_n)  # [i + n*n_of_iterations, :] = y_n_i
-        y.append(y_n_d1)
-        y.append(y_n_d2)
-        y.append(y_n_d3)
+
+        if DEL:
+            x_n, y_n, y_n_d1, y_n_d2, y_n_d3 = arrays_to_dataframe(x_n_i, y_n_i, DEL)
+            x.append(x_n)
+            x.append(x_n)
+            x.append(x_n)
+            x.append(x_n)
+            y.append(y_n)
+            y.append(y_n_d1)
+            y.append(y_n_d2)
+            y.append(y_n_d3)
+        else:
+            x_n, y_n= arrays_to_dataframe(x_n_i, y_n_i, DEL)
+            # x_norm = x_scale.transform(x_n.data.values.reshape(-1, 1))
+            # y_norm = x_scale.transform(y_n.data.values.reshape(-1, 1))
+            x.append(x_n)
+            y.append(y_n)
+            # x_scalers.append(x_scale)
+            # y_scalers.append(y_scale)
 
 
 dataset = pd.DataFrame({'x': x, 'y': y})
-# dataset = {'x': x, 'y': y}
-# print("dataset shape: ", dataset.shape)
-dataset.to_pickle('dataset_error_force_del_raw_1506.pkl')
-# savemat(file_name='data_error_force_delsecsint_norm.pkl', mdict=dataset)
+pickle.dump(dataset, open('dataset100_std.pkl', 'wb'))
+# pickle.dump(x_scalers, open('x_minmax_scalers_100_0707.pkl', 'wb'))
+# pickle.dump(y_scalers, open('y_minmax_scalers_100_0707.pkl', 'wb'))
