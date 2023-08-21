@@ -13,7 +13,7 @@ def bag_read(file_path, str1, str2):
     b = bagreader(file_path)
 
     # read messages for each topic
-    # H_ERR_MSG = b.message_by_topic('/human_error')
+    H_ERR_MSG = b.message_by_topic('/human_error')
     ACT_POS_MSG = b.message_by_topic('/actual_position')
     REF_POS_MSG = b.message_by_topic('/reference_position')
     # POS_ERR_MSG = b.message_by_topic('/position_error')
@@ -21,7 +21,7 @@ def bag_read(file_path, str1, str2):
     EXPERIMENT_WINDOW_MSG = b.message_by_topic("/experiment_window")
 
     # import csv as panda dataframe
-    # h_err_pd = pd.read_csv(H_ERR_MSG)
+    h_err_pd = pd.read_csv(H_ERR_MSG)
     act_pos_pd = pd.read_csv(ACT_POS_MSG)
     ref_pos_pd = pd.read_csv(REF_POS_MSG)
     # pos_err_pd = pd.read_csv(POS_ERR_MSG)
@@ -29,12 +29,13 @@ def bag_read(file_path, str1, str2):
     experiment_window_pd = pd.read_csv(EXPERIMENT_WINDOW_MSG)
 
     # create vectors
+
     # act_pos_x = act_pos_pd['pose.position.x']
     # act_pos_y = act_pos_pd['pose.position.y']
     # ref_pos_x = ref_pos_pd['pose.position.x']
     # ref_pos_y = ref_pos_pd['pose.position.y']
-    plot_array1 = force_pd[str1]
-    plot_array2 = force_pd[str2]
+    plot_array1 = act_pos_pd[str1]
+    plot_array2 = act_pos_pd[str2]
     experiment_window = experiment_window_pd['data']
 
     # for i in range(len(act_pos_x)):
@@ -73,10 +74,10 @@ subjects_complete = ['/Alessandro_Scano', '/Claudia_Pagano', '/Francesco_Airoldi
                      '/Giorgio_Nicola', '/Paolo_Franceschi', '/Marco_Faroni', '/Stefano_Mutti', '/Trunal']
 
 #INPUT PARAMETERS
-subject = '/Marco_Faroni'
-exp_number = 2
-what_to_plot1 = 'wrench.force.x'
-what_to_plot2 = 'wrench.force.y'
+subject = '/Stefano_Mutti'
+exp_number = 1
+what_to_plot1 = 'pose.position.x'
+what_to_plot2 = 'pose.position.y'
 
 bag_folder_base = '/home/adriano/projects/bag/controller_adriano/'
 file_extension = '.bag'
@@ -94,12 +95,12 @@ plt_time = np.linspace(start=0, stop=60, num=len(array1))
 plt.figure(1)
 plt.plot(plt_time, array1)
 plt.xlabel("time")
-plt.ylabel("force x")
+plt.ylabel("h err x")
 plt.grid()
 
 plt.figure(2)
 plt.plot(plt_time, array2)
 plt.xlabel("time")
-plt.ylabel("force y")
+plt.ylabel("h err y")
 plt.grid()
 plt.show()

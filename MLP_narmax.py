@@ -165,7 +165,7 @@ def train(model, epochs, n_skip_elems, X_train, y_train, X_val, y_val, log_inter
             plt.show()
 
 
-dataframe = pd.read_pickle('dataset100_norm.pkl')
+dataframe = pd.read_pickle('mlp_tests/datasets/dataset100_norm.pkl')
 
 X = dataframe["x"]
 Y = dataframe["y"]
@@ -228,7 +228,7 @@ if PREDICT:
     rand_subj_idx = np.random.randint(low=0, high=xdata.shape[1])
     noise = np.random.normal(noise_mean, noise_std, size=xdata.shape[0])
 
-    dataframe_raw = pd.read_pickle('dataset100_raw.pkl')
+    dataframe_raw = pd.read_pickle('mlp_tests/datasets/dataset100_raw.pkl')
     X_raw = dataframe_raw["x"]
     Y_raw = dataframe_raw["y"]
     data_x_raw = np.empty((len(X_raw.values), len(X_raw.values[0]['data'])))

@@ -62,7 +62,7 @@ def bag_read(file_path):
     h_force_y = force_pd['wrench.force.y']
     experiment_window = experiment_window_pd['data']
 
-    for i in range(len(act_pos_x)):
+    for i in range(len(h_force_x)):
         ref_pos = np.sqrt((np.power(ref_pos_x, 2) + np.power(ref_pos_y, 2)))
         act_pos = np.sqrt((np.power(act_pos_x, 2) + np.power(act_pos_y, 2)))
         h_force = np.sqrt((np.power(h_force_x, 2) + np.power(h_force_y, 2)))
@@ -79,9 +79,10 @@ def bag_read(file_path):
     ref_pos_adj = []
     act_pos_adj = []
     lenghts = []
-    error_adj = []
+    # error_adj = []
     # error_adj_dot = []
     lenghts.append(len(h_force))
+    # lenghts.append(len(h_err_adj))
     lenghts.append(len(ref_pos_input))
     lenghts.append(len(act_pos_input))
     lenghts.append(len(experiment_window))
@@ -96,32 +97,38 @@ def bag_read(file_path):
         if window_vector[idx] == 1:
             # time_adj.append(time[idx])
             force_adj.append(h_force[idx])
+            # h_err_adj.append(h_err_adj[idx])
             ref_pos_adj.append(ref_pos_input[idx])
             act_pos_adj.append(act_pos_input[idx])
-            error_adj.append(ref_pos_input[idx] - act_pos_input[idx])
+            # error_adj.append(ref_pos_input[idx] - act_pos_input[idx])
 
     # CONVERT TO NP ARRAYS
-    input_array = np.array(error_adj)
+    input_array = np.array(ref_pos_adj)
     output_array = np.array(force_adj)
+    output2_array = np.array(act_pos_adj)
 
     input_norm = []
     output_norm = []
-    for idx in range(0, len(error_adj)):
-        input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
-        output_norm.append((output_array[idx] - np.mean(output_array))/np.std(output_array))
-        # input_norm.append((input_array[idx] - np.min(input_array))/(np.max(input_array) - np.min(input_array)))
-        # output_norm.append((output_array[idx] - np.min(output_array))/(np.max(output_array) - np.min(output_array)))
+    output2_norm = []
+    for idx in range(0, len(ref_pos_adj)):
+        # input_norm.append((input_array[idx] - np.mean(input_array))/np.std(input_array))
+        # output_norm.append((output_array[idx] - np.mean(output_array))/np.std(output_array))
+        input_norm.append((input_array[idx] - np.min(input_array))/(np.max(input_array) - np.min(input_array)))
+        output_norm.append((output_array[idx] - np.min(output_array))/(np.max(output_array) - np.min(output_array)))
+        output2_norm.append((output2_array[idx] - np.min(output2_array)) / (np.max(output2_array) - np.min(output2_array)))
 
     input_norm_array = np.array(input_norm)
     output_norm_array = np.array(output_norm)
+    output2_norm_array = np.array(output2_norm)
 
-    return input_norm_array, output_norm_array
+    return input_norm_array, output_norm_array, output2_norm_array
 
 
-def arrays_to_dataframe(input, output, DEL):
+def arrays_to_dataframe(input, output, output2, DEL):
 
     input_df = pd.DataFrame({'data': input})
     output_df = pd.DataFrame({'data': output})
+    output2_df = pd.DataFrame({'data': output2})
 
     if DEL:
         # Add delayed copies
@@ -147,7 +154,7 @@ def arrays_to_dataframe(input, output, DEL):
         # output_scaler = StandardScaler().fit(output_df.data.values.reshape(-1, 1))
         # input_scaler = MinMaxScaler().fit(input_df.data.values.reshape(-1, 1))
         # output_scaler = MinMaxScaler().fit(output_df.data.values.reshape(-1, 1))
-        return input_df, output_df  # input_scaler, output_scaler
+        return input_df, output_df, output2_df  # input_scaler, output_scaler
 
 
 
@@ -181,6 +188,7 @@ min_len = 7500
 
 x = []
 y = []
+y2 = []
 x_scalers = []
 y_scalers = []
 for n in range(0, len(subjects)):
@@ -189,11 +197,11 @@ for n in range(0, len(subjects)):
         experiment_number = str(i+1)
         file_name = experiment_type + underscore + experiment_number
         bag_input = bag_folder + file_name + file_extension
-        x_n_i, y_n_i = bag_read(bag_input)
+        x_n_i, y_n_i, y2_n_i = bag_read(bag_input)
         if len(x_n_i) > min_len:
             x_n_i = x_n_i[:min_len]
             y_n_i = y_n_i[:min_len]
-
+            y2_n_i = y2_n_i[:min_len]
         if DEL:
             x_n, y_n, y_n_d1, y_n_d2, y_n_d3 = arrays_to_dataframe(x_n_i, y_n_i, DEL)
             x.append(x_n)
@@ -205,16 +213,17 @@ for n in range(0, len(subjects)):
             y.append(y_n_d2)
             y.append(y_n_d3)
         else:
-            x_n, y_n= arrays_to_dataframe(x_n_i, y_n_i, DEL)
+            x_n, y_n, y2_n = arrays_to_dataframe(x_n_i, y_n_i, y2_n_i, DEL)
             # x_norm = x_scale.transform(x_n.data.values.reshape(-1, 1))
             # y_norm = x_scale.transform(y_n.data.values.reshape(-1, 1))
             x.append(x_n)
             y.append(y_n)
+            y2.append(y2_n)
             # x_scalers.append(x_scale)
             # y_scalers.append(y_scale)
 
 
-dataset = pd.DataFrame({'x': x, 'y': y})
-pickle.dump(dataset, open('dataset100_std.pkl', 'wb'))
+dataset = pd.DataFrame({'x': x, 'y': y, 'y2': y2})
+pickle.dump(dataset, open('dataset_ref_f_act_mod_norm.pkl', 'wb'))
 # pickle.dump(x_scalers, open('x_minmax_scalers_100_0707.pkl', 'wb'))
 # pickle.dump(y_scalers, open('y_minmax_scalers_100_0707.pkl', 'wb'))
