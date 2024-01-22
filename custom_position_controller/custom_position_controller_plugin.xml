@@ -1,0 +1,6 @@
+<library path="lib/libcustom_position_controller">
+  <class name="custom_position_controller/MyPositionController"
+         type="custom_position_controller::MyPositionController"
+         base_class_type="controller_interface::ControllerBase">
+  </class>
+</library>

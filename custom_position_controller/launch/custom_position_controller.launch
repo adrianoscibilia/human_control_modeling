@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<launch>
+     <!--Set args-->
+     <arg name="debug" default="false"/>
+     <arg name="use_rviz" default="false"/>
+     <arg name="rvizconfig" default="$(find comau_hw_interface)/rviz/comau_default.rviz"/>
+     <arg name="simulated" default="false"/>
+     <arg name="rate" default="1000"/> 
+     <arg name="enable_fake_move" default="false"/>
+     <param name="human_estimator_gain" value="8"/>
+
+     <!-- Packages: comau_hw_interface for the urdf with two robots and the table, custom_position_controller for simple single robot -->
+     <arg name="model" default="$(find custom_position_controller)/urdf/comau_ns16hand.xacro"/>  
+
+     <!-- Set parameters -->
+     <param name="robot_description" command="$(find xacro)/xacro $(arg model)" />
+     <param name="simulated" value="$(arg simulated)"/>
+     <param name="rate" value="$(arg rate)"/>
+
+     <!-- Include cnr hardware interface  -->
+     <include file="$(find test_app)/launch/cell_bringup.launch">
+          <arg name="debug" value="$(arg debug)"/>
+          <arg name="use_rviz" value="$(arg use_rviz)"/>
+     </include>
+
+     <!-- FT sensor -->
+     <node name="ft_sensor" pkg="robotiq_ft_sensor" type="rq_sensor" args="ttyUSB0" />
+
+     <!-- Include human estimator node -->
+     <node name="human_estimator" pkg="custom_position_controller" type="human_estimator.py" output="screen" >
+     </node>
+
+     <!-- launch dummy publisher if testing without robot -->
+     <group if="$(arg simulated)">
+        <param name="rate" value="$(arg rate)"/>
+        <param name="enable_fake_move" value="$(arg enable_fake_move)"/>
+
+        <node pkg="comau_hw_interface" type="dummy_publisher" name="dummy_publisher" output="screen">
+          <rosparam>
+               appenders: [screen, file]
+               levels: [trace, trace]
+               file_name: "dummy_publisher"
+               pattern_layout: "[%5p][%d{HH:mm:ss,SSS}][%M:%04L][%c] %m%n"
+          </rosparam>
+        </node>
+    </group>
+</launch>

@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+
+<robot name="comau_ns16hand" xmlns:xacro="http://ros.org/wiki/xacro">
+	<xacro:include filename="$(find custom_position_controller)/urdf/comau_ns16hand_macro.xacro"/>
+	<xacro:comau_ns16hand prefix="" />
+
+  <!-- include robotiq ft sensor description -->
+  <xacro:include filename="$(find robotiq_ft_sensor)/urdf/robotiq_ft300.urdf.xacro" />
+
+  <xacro:robotiq_ft300 parent="ee_link" prefix="">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </xacro:robotiq_ft300>
+  
+  <!-- Frame coincident with all-zeros TCP on COMAU controller -->
+  <link name="world"/>
+  <joint name="world_joint" type="fixed">
+    <child link="world"/>
+    <parent link="base"/>
+    <origin rpy="0 0 -3.14159265" xyz="0.0 0.0 0.0"/>
+  </joint>
+</robot>

@@ -1,0 +1,39 @@
+# Settings for ros_control control loop
+hardware_control_loop:
+   loop_hz: &loop_hz 1000
+
+#hardware interface settings
+comau_hw_interface:
+   joints: &robot_joints
+     - Joint_1
+     - Joint_2
+     - Joint_3
+     - Joint_4
+     - Joint_5
+     - Joint_6
+
+# Publish all joint states ----------------------------------
+joint_state_controller:
+   type:         joint_state_controller/JointStateController
+   publish_rate: *loop_hz
+
+# # Publish wrench ----------------------------------
+# force_torque_sensor_controller:
+#    type:         force_torque_sensor_controller/ForceTorqueSensorController
+#    publish_rate: *loop_hz
+
+#controller settings
+my_position_controller:
+    type: custom_position_controller/MyPositionController
+    base_frame: "base_link"
+    tool_frame: "ee_link"
+    loop_hz: *loop_hz
+    joints: *robot_joints
+    stiffness: [50,50,500,10,10,10]
+    inertia: [15,15,100,10,10,10]
+    damping_factor: 0.7
+    smoothing_factor_force: 1
+    smoothing_factor_vel: 0.3
+    deadband_force_inf: -2
+    deadband_force_sup: 2
+    deadband_vel: 0.001
