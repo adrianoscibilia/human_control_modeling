@@ -224,6 +224,6 @@ for n in range(0, len(subjects)):
 
 
 dataset = pd.DataFrame({'x': x, 'y': y, 'y2': y2})
-pickle.dump(dataset, open('dataset_ref_f_act_mod_norm.pkl', 'wb'))
+pickle.dump(dataset, open('dataset/dataset_ref_f_act_mod_norm.pkl', 'wb'))
 # pickle.dump(x_scalers, open('x_minmax_scalers_100_0707.pkl', 'wb'))
 # pickle.dump(y_scalers, open('y_minmax_scalers_100_0707.pkl', 'wb'))

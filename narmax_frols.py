@@ -11,14 +11,15 @@ from sysidentpy.utils.display_results import results
 from sysidentpy.utils.plotting import plot_residues_correlation, plot_results
 from sysidentpy.residues.residues_correlation import compute_residues_autocorrelation, compute_cross_correlation
 
-MODEL_FEATURES = 'narmax_test'
-FILE_NAME = MODEL_FEATURES + '.pkl'
+HOME_DIR = '/home/adriano/PycharmProjects/human_reaction_delay_nn/frols_tests/'
+MODEL_FEATURES = 'narmax3_poly3_ls_bic_2608'
+FILE_NAME = HOME_DIR + MODEL_FEATURES + '.pkl'
 TRAIN = False
 TRAIN_STOP = 12
 EPOCHS = 400
-LOG_INTERVAL = 5
+LOG_INTERVAL = 100
 
-data = pd.read_pickle('dataset_error_force_del_raw_1506.pkl')
+data = pd.read_pickle('dataset/dataset_ref_f_mod_norm.pkl')
 dataframe = pd.DataFrame(data)
 X = dataframe["x"]
 Y = dataframe["y"]

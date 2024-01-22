@@ -15,11 +15,11 @@ import xlsxwriter
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # DEVICE = torch.device("cpu")
-TRAIN = False
-PREDICT = False
+TRAIN = True
+PREDICT = True
 EVALUATE = True
 
-NET_FEATURES = 'net5_narmax10_xy_tr50_summary'
+NET_FEATURES = 'net5_narmax10_xy_tr50_summary_cpu'
 FILE_NAME = NET_FEATURES + '.pkl'
 fig_dir = '/home/adriano/Pictures/NN_model_Figures/'
 
@@ -152,7 +152,7 @@ def train(model, epochs, X1_train, X2_train, y1_train, y2_train, X1_val, X2_val,
             plt.show()
 
 
-dataframe = pd.read_pickle('dataset_ref_f_norm.pkl')
+dataframe = pd.read_pickle('dataset/dataset_ref_f_norm.pkl')
 
 X1 = dataframe["x1"]
 X2 = dataframe["x2"]
@@ -233,7 +233,7 @@ if PREDICT:
     # rand_subj_idx = np.random.randint(low=0, high=x1data.shape[1])
     noise = np.random.normal(noise_mean, noise_std, size=x1data.shape[0])
 
-    dataframe_raw = pd.read_pickle('dataset_ref_f_raw.pkl')
+    dataframe_raw = pd.read_pickle('dataset/dataset_ref_f_raw.pkl')
     X1_raw = dataframe_raw["x1"]
     X2_raw = dataframe_raw["x2"]
     Y1_raw = dataframe_raw["y1"]
@@ -321,7 +321,7 @@ if EVALUATE:
     # load model
     model = pickle.load(open(FILE_NAME, 'rb'))
 
-    dataframe_raw = pd.read_pickle('dataset_ref_f_raw.pkl')
+    dataframe_raw = pd.read_pickle('dataset/dataset_ref_f_raw.pkl')
     X1_raw = dataframe_raw["x1"]
     X2_raw = dataframe_raw["x2"]
     Y1_raw = dataframe_raw["y1"]
@@ -370,10 +370,10 @@ if EVALUATE:
         max_Yy = np.max(y2data_raw[:, subj_idx])
         min_Yx = np.min(y1data_raw[:, subj_idx])
         min_Yy = np.min(y2data_raw[:, subj_idx])
-        y1_denorm = (y1data[(n_k + n_b):, subj_idx]) * (max_Yx - min_Yx) / 2 + min_Yx
-        y2_denorm = (y2data[(n_k + n_b):, subj_idx]) * (max_Yy - min_Yy) / 2 + min_Yy
-        prediction_x = pred_x_vector * (max_Yx - min_Yx) / 2 + min_Yx
-        prediction_y = pred_y_vector * (max_Yy - min_Yy) / 2 + min_Yy
+        y1_denorm = (y1data[(n_k + n_b):, subj_idx]+1) * (max_Yx - min_Yx) / 2 + min_Yx
+        y2_denorm = (y2data[(n_k + n_b):, subj_idx]+1) * (max_Yy - min_Yy) / 2 + min_Yy
+        prediction_x = (pred_x_vector + 1) * (max_Yx - min_Yx) / 2 + min_Yx
+        prediction_y = (pred_y_vector + 1) * (max_Yy - min_Yy) / 2 + min_Yy
         MSE_x.append(skl.mean_squared_error(y_true=y1_denorm, y_pred=prediction_x, squared=False))
         MSE_y.append(skl.mean_squared_error(y_true=y2_denorm, y_pred=prediction_y, squared=False))
         R2_x.append(r2_score(y_true=y1data[(n_k + n_b):, subj_idx],  y_pred=pred_x_vector))
@@ -386,7 +386,7 @@ if EVALUATE:
         'R2 score y': R2_y
     })
 
-    writer = pd.ExcelWriter("scores_table_2008.xlsx", engine='xlsxwriter')
+    writer = pd.ExcelWriter("tables/scores_table_2308.xlsx", engine='xlsxwriter')
     scores_df.to_excel(writer, sheet_name='Sheet1', startrow=1, header=False, index=False)
 
     # Get the xlsxwriter workbook and worksheet objects.

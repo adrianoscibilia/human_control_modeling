@@ -15,12 +15,13 @@ import sklearn.metrics as skl
 
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 TRAIN = False
-PREDICT = False
-EVALUATE = True
-MODEL_ORDER = 2
-NET_FEATURES = 'narmax2_pk2pk_2108'  # 'narmax10_pk2pk_listed'
+PREDICT = True
+EVALUATE = False
+RECURSIVE_PLOT = False
+MODEL_ORDER = 5
+NET_FEATURES = 'narmax3_pk2pk_2108'  # 'narmax10_pk2pk_listed'  # narmax2_pk2pk_2108
 FILE_NAME = NET_FEATURES + '.pkl'
-fig_dir = '/home/adriano/Pictures/NN_model_Figures/'
+fig_dir = '/home/adriano/Pictures/narmax tests/pk2pk/test_complete/'
 
 
 class MLP(torch.nn.Module):
@@ -49,8 +50,8 @@ def train(model, epochs, X1_train, y1_train, X1_val, y1_val, pk_idxs1, log_inter
     test_scores = []
     best_so_far = np.inf
     counter = 0
-    # noise = np.random.normal(noise_mean, noise_std, size=X1_train.shape[0])
-    # noise_val = np.random.normal(noise_mean, noise_std, size=X1_val.shape[0])
+    noise = np.random.normal(noise_mean, noise_std, size=X1_train.shape[0])
+    noise_val = np.random.normal(noise_mean, noise_std, size=X1_val.shape[0])
     for epoch in range(epochs):
 
         epoch_val_loss = 0
@@ -62,7 +63,8 @@ def train(model, epochs, X1_train, y1_train, X1_val, y1_val, pk_idxs1, log_inter
         # for sel_pk in X1_train[:, i]:
         #     if sel_pk < X1_train.shape[0]:
         #         train_peaks_1.append(sel_pk)
-        train_idx_1 = np.random.choice(pk_idxs1[train_subj][MODEL_ORDER:])
+        # train_idx_1 = np.random.choice(pk_idxs1[train_subj][MODEL_ORDER:])
+        train_idx_1 = np.random.randint(low=MODEL_ORDER, high=len(pk_idxs1[train_subj][:]))
         # train_peaks_2 = []
         # for sel_pk in X2_train[:, i]:
         #     if sel_pk < X1_train.shape[0]:
@@ -70,14 +72,14 @@ def train(model, epochs, X1_train, y1_train, X1_val, y1_val, pk_idxs1, log_inter
         # train_idx_2 = np.random.choice(pk_idxs2[train_subj][:])
         invals1 = []
         # invals2 = []
-        for k in range(1, n_a): invals1.append(y1_train[train_idx_1 - k , train_subj])
-        for k in range(n_k, n_k + n_b): invals1.append(X1_train[train_idx_1 - k , train_subj])  # + noise[train_idx_1 - k ])
+        for k in range(1, n_a): invals1.append(y1_train[pk_idxs1[train_subj][train_idx_1] - k, train_subj])
+        for k in range(n_k, n_k + n_b): invals1.append(X1_train[pk_idxs1[train_subj][train_idx_1] - k, train_subj] + noise[train_idx_1 - k ])
         # for k in range(1, n_a): invals2.append(y2_train[train_idx_2 - k , train_subj])
         # for k in range(n_k, n_k + n_b): invals2.append(X2_train[train_idx_2 - k , train_subj])  # + noise[train_idx_2 - k ])
         invals = np.array(invals1)  # np.vstack((np.array(invals1), np.array(invals2)))
         narmax_input_train = invals.reshape(-1, 1).transpose()
         outvals = []
-        outvals.append(y1_train[train_idx_1, train_subj])
+        outvals.append(y1_train[pk_idxs1[train_subj][train_idx_1], train_subj])
         # outvals.append(y2_train[train_idx_2, train_subj])
         narmax_output_train = np.array(outvals).reshape(-1, 1).transpose()
         train_dataset = Data.TensorDataset(torch.from_numpy(narmax_input_train).float(), torch.from_numpy(narmax_output_train).float())
@@ -97,18 +99,19 @@ def train(model, epochs, X1_train, y1_train, X1_val, y1_val, pk_idxs1, log_inter
         #     i = np.random.randint(low=0, high=99)
 
         val_subject = np.random.randint(low=0, high=X1_val.shape[1])
-        val_idx_1 = np.random.choice(pk_idxs1[X1_train.shape[1] + val_subject][MODEL_ORDER:])
+        # val_idx_1 = np.random.choice(pk_idxs1[X1_train.shape[1] + val_subject][MODEL_ORDER:])
+        val_idx_1 = np.random.randint(low=MODEL_ORDER, high=len(pk_idxs1[X1_train.shape[1] + val_subject][:]))
         # val_idx_2 = np.random.choice(pk_idxs2[X1_train.shape[1] + val_subject][:])
         invals1 = []
         invals2 = []
-        for k in range(1, n_a): invals1.append(y1_val[val_idx_1 - k , val_subject])
-        for k in range(n_k, n_k + n_b): invals1.append(X1_val[val_idx_1 - k , val_subject])  # + noise_val[val_idx_1 - k ])
-        # for k in range(1, n_a): invals2.append(y2_val[val_idx_2 - k , val_subject])
+        for k in range(1, n_a): invals1.append(y1_val[pk_idxs1[X1_train.shape[1] + val_subject][val_idx_1] - k, val_subject])
+        for k in range(n_k, n_k + n_b): invals1.append(X1_val[pk_idxs1[X1_train.shape[1] + val_subject][val_idx_1] - k, val_subject] + noise_val[val_idx_1 - k ])
+        # for k in range(1, n_a): invals2.append(y2_val[val_idx_2 - k , val_subject])000000000
         # for k in range(n_k, n_k + n_b): invals2.append(X2_val[val_idx_2 - k , val_subject])  # + noise[val_idx_2 - k ])
         invals = np.array(invals1)  # np.vstack((np.array(invals1), np.array(invals2)))
         narmax_input_val = invals.reshape(-1, 1).transpose()
         outvals = []
-        outvals.append(y1_val[val_idx_1, val_subject])
+        outvals.append(y1_val[pk_idxs1[X1_train.shape[1] + val_subject][val_idx_1], val_subject])
         # outvals.append(y2_val[val_idx_2, val_subject])
         narmax_output_val = np.array(outvals).reshape(-1, 1).transpose()
         val_dataset = Data.TensorDataset(torch.from_numpy(narmax_input_val).float(), torch.from_numpy(narmax_output_val).float())
@@ -145,7 +148,7 @@ def train(model, epochs, X1_train, y1_train, X1_val, y1_val, pk_idxs1, log_inter
                     counter = 0
                 else:
                     counter += 1
-                if counter > 5000:
+                if counter > 1000:
                     break
             test_losses.append(epoch_val_loss.cpu().detach().numpy().tolist())
         print("Iteration: ", epoch, " Loss: ", epoch_train_loss, " Validation loss: ", epoch_val_loss)
@@ -199,7 +202,7 @@ def peak_to_peak(input_array, PLOT):
 
 
 # dataframe = pd.read_pickle('dataset_ref_f_mod_norm.pkl')
-dataframe_xy = pd.read_pickle('dataset_ref_f_norm.pkl')
+dataframe_xy = pd.read_pickle('dataset/dataset_ref_f_norm.pkl')
 
 X1 = dataframe_xy["x1"]
 X2 = dataframe_xy["x2"]
@@ -327,10 +330,10 @@ D_in, H, D_out = narmax_len, narmax_len, 1
 model = MLP(D_in, H, D_out)
 
 if TRAIN:
-    epochs = xdata.shape[1]  # 30 * xdata.shape[1] * 10
+    epochs = 30 * xdata.shape[1] * 30
     batch = narmax_len * 2
 
-    train(model, epochs, X1_train, y1_train, X1_val, y1_val, peak_locations, epochs, 1e-4)
+    train(model, epochs, X1_train, y1_train, X1_val, y1_val, peak_locations, epochs, 1e-3)
 
     # save model
     pickle.dump(model, open(FILE_NAME, 'wb'))
@@ -344,10 +347,10 @@ if PREDICT:
     pred_start_idx = (n_k + n_b)
     # test_start_idx = X_train.shape[0] + X_val.shape[0]
     # pred_start_idx = X_train.shape[0] + X_val.shape[0] + n_k + n_b
-    rand_subj_idx = 43  # np.random.randint(low=0, high=xdata.shape[1])
+    rand_subj_idx = 0 # np.random.randint(low=0, high=xdata.shape[1])
     noise = np.random.normal(noise_mean, noise_std, size=xdata.shape[0])
 
-    dataframe_raw = pd.read_pickle('dataset_ref_f_raw.pkl')
+    dataframe_raw = pd.read_pickle('dataset/dataset_ref_f_raw.pkl')
     X1_raw = dataframe_raw["x1"]
     Y1_raw = dataframe_raw["y1"]
     X2_raw = dataframe_raw["x2"]
@@ -385,10 +388,10 @@ if PREDICT:
     # lenghts.append(len(peak2_locations[rand_subj_idx][:]))
     # minlen = np.min(lenghts)
 
-    for test_idx in range(0, len(peak_locations[rand_subj_idx][:])):
+    for test_idx in range(MODEL_ORDER, len(peak_locations[rand_subj_idx][:])):
         invals1 = []
         # invals2 = []
-        for k in range(1, n_a): invals1.append(ydata[peak_locations[rand_subj_idx][test_idx] - k, rand_subj_idx])
+        for k in range(1, n_a): invals1.append(ydata[peak_locations[rand_subj_idx][test_idx - k], rand_subj_idx])
         for k in range(n_k, n_k + n_b): invals1.append(xdata[peak_locations[rand_subj_idx][test_idx] - k, rand_subj_idx])
         # for k in range(1, n_a): invals2.append(y2data[peak2_locations[rand_subj_idx][test_idx] - k, rand_subj_idx])
         # for k in range(n_k, n_k + n_b): invals2.append(x2data[peak2_locations[rand_subj_idx][test_idx] - k, rand_subj_idx])
@@ -404,7 +407,7 @@ if PREDICT:
     # print("predicted pk2pk intervals [ ",  len(pred_y_vector), "]: ",  pred_y_vector)
 
     # plots
-    plt_time = np.linspace(start=time[pred_start_idx], stop=60, num=xdata.shape[0]-(n_k+n_b))
+    plt_time = np.linspace(start=0, stop=60, num=xdata.shape[0])
     max_Y = np.max(ydata_raw[:, rand_subj_idx])
     min_Y = np.min(ydata_raw[:, rand_subj_idx])
     # max_Y2 = np.max(y2data_raw[:, rand_subj_idx])
@@ -417,9 +420,9 @@ if PREDICT:
     fig_title = 'predicted vs actual force for experiment n: ' + str(rand_subj_idx)
 
     plt.figure(1)
-    plt.plot(y_denorm)
-    plt.plot(peak_locations[rand_subj_idx][:], prediction, 'x')
-    plt.plot(peak_locations[rand_subj_idx][:], pk_denorm, 'o', alpha=0.5)
+    plt.plot(plt_time, y_denorm[MODEL_ORDER:])
+    plt.plot(peak_locations[rand_subj_idx][MODEL_ORDER:]*0.008, prediction, 'x')
+    plt.plot(peak_locations[rand_subj_idx][MODEL_ORDER:]*0.008, pk_denorm, 'o', alpha=0.5)
     plt.legend(['signal', 'prediction', 'truth'])
     plt.xlabel("time")
     plt.ylabel("force peaks")
@@ -429,9 +432,92 @@ if PREDICT:
     plt.show()
     plt.close()
 
+if RECURSIVE_PLOT:
+    xdata_summary = np.empty((len(X1.values[0]['data']), 20))
+    ydata_summary = np.empty((len(Y1.values[0]['data']), 20))
+    xdata_raw_summary = np.empty((len(X1.values[0]['data']), 20))
+    ydata_raw_summary = np.empty((len(Y1.values[0]['data']), 20))
+    peak_locations_summary = []
+    peak_values_summary = []
+
+    dataframe_raw = pd.read_pickle('dataset/dataset_ref_f_raw.pkl')
+    X1_raw = dataframe_raw["x1"]
+    Y1_raw = dataframe_raw["y1"]
+    X2_raw = dataframe_raw["x2"]
+    Y2_raw = dataframe_raw["y2"]
+
+    data_x_raw = np.empty((2 * len(X1_raw.values), len(X1_raw.values[0]['data'])))
+    data_y_raw = np.empty((2 * len(Y1_raw.values), len(Y1_raw.values[0]['data'])))
+    for i in range(0, len(X1.values)):
+        data_x_raw[i, :] = X1_raw.values[i]['data']
+        data_x_raw[i + 100, :] = X2_raw.values[i]['data']
+        data_y_raw[i, :] = Y1_raw.values[i]['data']
+        data_y_raw[i + 100, :] = Y2_raw.values[i]['data']
+    xdata_raw = np.transpose(data_x_raw)
+    ydata_raw = np.transpose(data_y_raw)
+
+    i = 0
+    for idx in range(0, 200):
+        if idx % 10 == 0:
+            xdata_summary[:, i] = xdata[:, idx]
+            ydata_summary[:, i] = ydata[:, idx]
+            xdata_raw_summary[:, i] = xdata_raw[:, idx]
+            ydata_raw_summary[:, i] = ydata_raw[:, idx]
+            peak_locations_summary.append(peak_locations[idx][:])
+            peak_values_summary.append(peak_values[idx][:])
+            i += 1
+
+    plt_time = np.linspace(start=0, stop=60, num=xdata.shape[0])
+
+    for subj_idx in range(0, len(ydata_summary)):
+        pred_list = []
+        for test_idx in range(0, len(peak_locations_summary[subj_idx])):
+            invals1 = []
+            # invals2 = []
+            for k in range(1, n_a): invals1.append(ydata_summary[peak_locations_summary[subj_idx][test_idx] - k, subj_idx])
+            for k in range(n_k, n_k + n_b): invals1.append(xdata_summary[peak_locations_summary[subj_idx][test_idx] - k, subj_idx])
+            invals = np.array(invals1)
+            narmax_input_test = invals.reshape(-1, 1).transpose()
+            pred_tensor = model(torch.from_numpy(narmax_input_test).float().to(DEVICE))
+            pred_list.append(pred_tensor.cpu().detach().numpy())
+        pred_vector = np.array(pred_list)
+
+
+        max_Y = np.max(ydata_raw_summary[:, subj_idx])
+        min_Y = np.min(ydata_raw_summary[:, subj_idx])
+        y_denorm = (ydata_summary[:, subj_idx] + 1) * (max_Y - min_Y) / 2 + min_Y
+        pk_denorm = (peak_values_summary[subj_idx][:] + 1) * (max_Y - min_Y) / 2 + min_Y
+        prediction = (pred_vector[:, 0, 0] + 1) * (max_Y - min_Y) / 2 + min_Y
+
+        # fig_title = 'predicted vs actual peak values for experiment n: ' + str(subj_idx)
+        plt.figure(subj_idx+1)
+        plt.plot(plt_time, y_denorm)
+        plt.plot(peak_locations_summary[subj_idx][:] * 0.008, prediction, 'x')
+        plt.plot(peak_locations_summary[subj_idx][:] * 0.008, pk_denorm, 'o', alpha=0.5)
+        plt.legend(['signal', 'prediction', 'truth'])
+        plt.xlabel("time")
+        plt.ylabel("force peaks")
+        plt.grid()
+        # plt.title(fig_title)
+        fig_name = fig_dir + 'pk2pk_test_' + str(subj_idx+1)
+        plt.savefig(fig_name)
+        plt.close()
+
+
 if EVALUATE:
     # load model
     model = pickle.load(open(FILE_NAME, 'rb'))
+
+    # load raw data
+    dataframe_raw = pd.read_pickle('dataset/dataset_ref_f_raw.pkl')
+    Y1_raw = dataframe_raw["y1"]
+    Y2_raw = dataframe_raw["y2"]
+
+    data_y_raw = np.empty((2 * len(Y1_raw.values), len(Y1_raw.values[0]['data'])))
+    for i in range(0, len(Y1_raw.values)):
+        data_y_raw[i, :] = Y1_raw.values[i]['data']
+        data_y_raw[i + 100, :] = Y2_raw.values[i]['data']
+    ydata_raw = np.transpose(data_y_raw)
 
     # See model predictions
     test_start_idx = 0
@@ -451,7 +537,11 @@ if EVALUATE:
             pred_tensor = model(torch.from_numpy(narmax_input_test).float().to(DEVICE))
             pred_list.append(pred_tensor.cpu().detach().numpy())
         pred_vector = np.array(pred_list)
-        MSE.append(skl.mean_squared_error(y_true=peak_values[subj_idx][:], y_pred=pred_vector[:, 0, 0]))
+        max_Y = np.max(ydata_raw[:, subj_idx])
+        min_Y = np.min(ydata_raw[:, subj_idx])
+        pk_denorm = (peak_values[subj_idx][:] + 1) * (max_Y - min_Y) / 2 + min_Y
+        prediction = (pred_vector[:, 0, 0] + 1) * (max_Y - min_Y) / 2 + min_Y
+        MSE.append(skl.mean_squared_error(y_true=pk_denorm, y_pred=prediction, squared=False))
         R2.append(r2_score(y_true=peak_values[subj_idx][:],  y_pred=pred_vector[:, 0, 0]))
 
     scores_df = pd.DataFrame({
@@ -459,7 +549,7 @@ if EVALUATE:
         'R2 score': R2,
     })
 
-    writer = pd.ExcelWriter("pk2pk_scores_table.xlsx", engine='xlsxwriter')
+    writer = pd.ExcelWriter("tables/pk2pk_scores_table.xlsx", engine='xlsxwriter')
     scores_df.to_excel(writer, sheet_name='Sheet1', startrow=1, header=False, index=False)
 
     # Get the xlsxwriter workbook and worksheet objects.

@@ -212,4 +212,4 @@ for n in range(0, len(subjects)):
 
 
 dataset = pd.DataFrame({'x1': x1, 'x2': x2, 'y1': y1, 'y2': y2})
-pickle.dump(dataset, open('dataset_ref_f_raw.pkl', 'wb'))
+pickle.dump(dataset, open('dataset/dataset_ref_f_raw.pkl', 'wb'))
